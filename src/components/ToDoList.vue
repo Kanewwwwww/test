@@ -23,7 +23,7 @@
               </ul>
             </div>
             <ul class='list-group list-group-flush text-left'>
-              <li class='list-group-item' v-for="item in filterList" :key="item.name">
+              <li class='list-group-item' v-for="item in displayList" :key="item.name">
                 <div class='d-flex'>
                   <div class='form-check'>
                     <input type='checkbox' class='form-check-input' id='a1'>
@@ -56,7 +56,6 @@ export default {
   data () {
     return {
       'newData': '',
-      'todoCount': '',
       'option': [{
         'name': '全部',
         'value': 'all',
@@ -90,11 +89,20 @@ export default {
       'fliterStatus': 'all'
     }
   },
-  created: function () {
-    this.filterList = this.list
-  },
-  mounted: function () {
-    updateTodoCount(this)
+  computed: {
+    todoCount () {
+      let data = this.list.filter(list => list.status === 'todo')
+      return data.length
+    },
+    displayList () {
+      let activeOption = (this.option.filter(option => option.isActive === true))[0]
+      if (activeOption.value !== 'all') {
+        let data = this.list.filter(list => list.status === activeOption.value)
+        return data
+      } else {
+        return this.list
+      }
+    }
   },
   methods: {
     switchOption (e) {
@@ -102,60 +110,47 @@ export default {
         item.isActive = false
       })
       e.isActive = true
-      filterList(this)
+      this.filterList()
     },
     addList () {
       let newData = this.newData
-      if (validData(this, newData) === true) {
+      if (this.validData(this, newData) === true) {
         let newObject = {
           name: newData,
           status: 'todo'
         }
         this.list.push(newObject)
         this.newData = ''
-        updateTodoCount(this)
-        filterList(this)
+        this.updateTodoCount()
+        this.filterList()
       } else {
         alert('請輸入文字拉還有不可重複')
       }
     },
-    deleteList (e) {
-      var removeIndex = this.list.map(list => list.name === e).indexOf(true)
+    deleteList (name) {
+      var removeIndex = this.list.map(list => list.name === name).indexOf(true)
       this.list.splice(removeIndex, 1)
-      updateTodoCount(this)
-      filterList(this)
+      this.updateTodoCount()
+      this.setFilterList()
     },
     clearList () {
       this.list = []
-      updateTodoCount(this)
-      filterList(this)
+      this.updateTodoCount()
+      this.setFilterList()
+    },
+    validData (name) {
+      let status = true
+      if (name.length < 1) {
+        status = false
+      }
+      if (this.list.filter(list => list.name === name).length > 0) {
+        status = false
+      }
+      return status
     }
-  }
-}
-
-function validData (vueData, e) {
-  let status = true
-  if (e.length < 1) {
-    status = false
-  }
-  if (vueData.list.filter(list => list.name === e).length > 0) {
-    status = false
-  }
-  return status
-}
-
-function updateTodoCount (vueData) {
-  let data = vueData.list.filter(list => list.status === 'todo')
-  vueData.todoCount = data.length
-}
-
-function filterList (vueData) {
-  let e = (vueData.option.filter(option => option.isActive === true))[0]
-  if (e.value !== 'all') {
-    let data = vueData.list.filter(list => list.status === e.value)
-    vueData.filterList = data
-  } else {
-    vueData.filterList = vueData.list
+  },
+  created () {
+    this.filterList = this.list
   }
 }
 </script>
